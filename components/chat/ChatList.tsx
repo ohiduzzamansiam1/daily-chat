@@ -1,77 +1,37 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
-import { MessageType, useMessage } from "@/lib/zustand/messages";
-import { useUser } from "@/lib/zustand/user";
-import { supabaseBrowserClient } from "@/utils/supabase/client";
-import { useEffect, useRef } from "react";
-import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useMessage } from "@/lib/zustand/messages";
+import { ArrowDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import Message from "./Message";
 import { DeleteAction, EditAction } from "./MessageActions";
 
 export default function ChatList() {
-  const {
-    messages,
-    addMessage,
-    optimisticMessageDelete,
-    optimisticMessageUpdate,
-  } = useMessage();
-  const { user } = useUser();
+  const { messages } = useMessage();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   useEffect(() => {
-    const channel = supabaseBrowserClient
-      .channel("chat-room")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        async (payload) => {
-          if (payload.eventType === "INSERT") {
-            if (payload.new.send_by !== user?.id) {
-              const { data, error } = await supabaseBrowserClient
-                .from("users")
-                .select("*")
-                .eq("id", payload.new.send_by)
-                .single();
-              if (error) {
-                toast.error(error.message);
-                return;
-              }
-              const message = {
-                ...payload.new,
-                users: data,
-              } as MessageType;
-              addMessage(message);
-            }
-          } else if (payload.eventType === "DELETE") {
-            optimisticMessageDelete(payload.old.id);
-          } else if (payload.eventType === "UPDATE") {
-            const { data, error } = await supabaseBrowserClient
-              .from("users")
-              .select("*")
-              .eq("id", payload.new.send_by)
-              .single();
-            if (error) {
-              toast.error(error.message);
-              return;
-            }
-            const message = {
-              ...payload.new,
-              users: data,
-            } as MessageType;
-            optimisticMessageUpdate(message);
-          }
-        }
-      )
-      .subscribe();
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } =
+          scrollContainerRef.current;
+        setShowScrollButton(scrollTop < scrollHeight - clientHeight);
+      }
+    };
+
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.addEventListener("scroll", handleScroll);
+    }
+
     return () => {
-      channel.unsubscribe();
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.removeEventListener("scroll", handleScroll);
+      }
     };
   }, []);
-
-  useEffect(() => {
-    // Scroll to bottom whenever only messages.length change
-    scrollToBottom();
-  }, [messages.length]);
 
   const scrollToBottom = () => {
     if (scrollContainerRef.current) {
@@ -80,10 +40,16 @@ export default function ChatList() {
     }
   };
 
+  useEffect(() => {
+    if (!showScrollButton) {
+      scrollToBottom();
+    }
+  }, [messages.length]);
+
   return (
     <>
       <div
-        className="flex-1 flex scroll-element flex-col p-5 max-w-full overflow-auto no-scrollbar scroll-smooth"
+        className="flex-1 flex flex-col scroll-element p-5 overflow-y-auto no-scrollbar scroll-smooth"
         ref={scrollContainerRef}
       >
         <DeleteAction />
@@ -94,6 +60,19 @@ export default function ChatList() {
           {messages.map((msg, idx) => (
             <Message key={idx} msg={msg} />
           ))}
+        </div>
+        <div
+          className={cn(
+            "absolute bottom-36 right-1/2 opacity-0 transition-all duration-300",
+            showScrollButton && "opacity-100"
+          )}
+        >
+          <div
+            onClick={scrollToBottom}
+            className="bg-primary transition-all duration-500 hover:scale-[1.1] grid cursor-pointer place-content-center rounded-full size-10 mx-auto shadow-2xl shadow-primary"
+          >
+            <ArrowDown size={18} />
+          </div>
         </div>
       </div>
     </>
