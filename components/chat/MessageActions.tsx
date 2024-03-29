@@ -72,13 +72,13 @@ export function DeleteAction() {
 }
 
 export function EditAction() {
-  const { actionMessage, messages, optimisticMessageUpdate } = useMessage();
+  const { actionMessage, optimisticMessageUpdate } = useMessage();
   const [message, setMessage] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleUpdateMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!message?.trim().length) return;
+    if (!message?.trim().length || actionMessage?.message === message) return;
     setIsUpdating(true);
 
     // Update message in local
@@ -135,7 +135,11 @@ export function EditAction() {
             <DialogFooter>
               <Button
                 type="submit"
-                disabled={!message?.trim().length || isUpdating}
+                disabled={
+                  !message?.trim().length ||
+                  isUpdating ||
+                  actionMessage?.message === message
+                }
                 className="w-full"
               >
                 {isUpdating ? (

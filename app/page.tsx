@@ -18,11 +18,28 @@ export default async function HomePage() {
         <div className="h-full border rounded-md shadow-2xl shadow-primary/10 flex flex-col">
           <ChatHeader user={user} />
 
-          <ChatMessages />
+          {/* If user is not logged in, show the text */}
+          {!user && (
+            <>
+              <div className="flex-1 text-center flex flex-col justify-center items-center">
+                <h1 className="text-3xl font-bold">Welcome to Daily Chat</h1>
+                <p className="mt-4 max-w-md">
+                  This is a chat application that power by supabase realtime db.
+                  Login to send message
+                </p>
+              </div>
+            </>
+          )}
 
-          <div className="p-5">
-            <ChatInput />
-          </div>
+          {user && (
+            <>
+              <ChatMessages />
+
+              <div className="p-5">
+                <ChatInput />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>

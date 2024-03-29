@@ -24,19 +24,19 @@ export default function Message({ msg }: { msg: MessageType }) {
           </AvatarFallback>
         </Avatar>
         <div className="flex-1 items-start">
-          <div className="flex items-center gap-x-1.5">
+          <div className="flex items-start flex-col md:flex-row md:items-center gap-x-1.5">
             <h1 className="font-semibold">{msg?.users?.display_name}</h1>
             <h1 className="text-xs text-gray-600 dark:text-gray-400 transition">
-              {new Date(msg?.created_at!).toDateString()}
+              {new Date(msg?.created_at!).toDateString()}{" "}
+              {msg?.is_edit && (
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  - (edited)
+                </span>
+              )}
             </h1>
-            {msg?.is_edit && (
-              <span className="text-xs text-gray-600 dark:text-gray-400">
-                - (edited)
-              </span>
-            )}
           </div>
 
-          <p className="text-gray-700 dark:text-gray-300 transition">
+          <p className="text-gray-700 dark:text-gray-300 transition mt-1 md:mt-0">
             {msg?.message}
           </p>
         </div>
